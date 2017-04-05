@@ -1,197 +1,187 @@
 #include <iostream>
 using namespace std;
 
-#include <conio.h>  // pour _kbhit() et _getch()
-#include <time.h>  // pour time(int)
-#include <stdlib.h>  // pour srand(int) et rand()
+#include <iostream>
+#include <time.h>
+#include <stdlib.h>
 #include "RockUtiles.h"
-// pour la gestion de l'écran
+#include <conio.h>
 
-// declaration de variable
-const int nbLigne = 30;
-const int debutLigne = 0;
-const int nbColonne = 70;
-const int debutColonne = 0;
-int valTouche;
-int direction;
-int posX = 0;
-int posY = 0;
+using namespace std;
+//variable
+int GrandeurSerpent = 2;
+char direction = 'd';
+char Terrain[20][30];
+int corpsX;
+int corpsY;
+int corpsComplet;
 
-// Partie I
-// --------
-void afficherTerrain(int nbLignes, int nbColonnes);
-int recupererTouche();
-int calculerDirectionTouche(int touche);
-void positionAleatoire(int nbLignes, int nbColonnes, int &posX, int &posY);
-void deplacerSerpentI(int direction, int &posX, int &posY);
+//fonction
+void CreeTerrain();
+void DessinerTerrain();
+void Random(int &x, int &y);
+bool TerrainLibre(int &x, int &y);
+void CreeSouris();
+bool Serpent(int &x, int &y);
+bool Mouvement(int &x, int &y);
+void Effacer(int x, int y);
+void Passer(int x, int y);
+void ToucheClavier(int &x, int &y);
+bool Fin(int &x, int &y);
 
-// Partie II
-// ---------
-int saisirNiveau();
-void creerSouris(int nbLignes, int nbColonnes,
-	int sourisX[], int sourisY[], int nbSouris);
-void afficherSouris(int sourisX[], int sourisY[], int nbSouris);
-void deplacerSerpentII(int direction, int serpentX[], int serpentY[],
-	int &tailleSerpent,
-	int sourisX[], int sourisY[], int &nbSouris);
-/* ou
-*/
-void deplacerSerpentII(int direction, int serpentX[], int serpentY[],
-	int &indiceTete, int &indiceQueue,
-	int sourisX[], int sourisY[], int &nbSouris);
-bool testerCollision(int x, int y, int sourisX[], int sourisY[], int &nbSouris);
-
-
-// Partie III (BONUS)
-// ------------------
-void deplacerSouris(int sourisX[], int sourisY[], int nbSouris);
-void placerMurs(int nbLignes, int nbColonnes, int nbMurs);
-
-
-
-
-//  fonction principale
-//  -------------------
+//Debut du programme
 int main()
 {
-
-	srand((unsigned int)time(NULL));
-	resetPalette();
-	positionAleatoire(nbLigne, nbColonne, posX, posY);
-	afficherTerrain(nbLigne, nbColonne);
-	valTouche = 0;
-
-
-	do
+	int x = 10, y = 15;
+	CreeTerrain();
+	CreeSouris();
+	DessinerTerrain();
+	while (Fin(x, y))
 	{
-		valTouche = recupererTouche();
-		//cout << valTouche << endl;
-		direction = calculerDirectionTouche(valTouche);
-		//cout << direction << endl;
-		deplacerSerpentI(direction, posX, posY);
-		Sleep(500);
-	} while (valTouche != 27);
-}
-
-
-
-
-// ************
-// * PARTIE I *
-// ************
-void afficherTerrain(int nbLignes, int nbColonnes)
-/*
-Tâche: afficher le contour du terrain
-Paramètres: le nombre de lignes et de colonnes du terrain rectangulaire
-*/
-{
-	setDimensionFenetre(0, 0, nbColonnes + 1, nbLignes + 1);
-	cadre(0, 0, nbColonnes, nbLignes, BACKGROUND_GREEN);
-}
-
-int recupererTouche()
-/*
-Tâche: tester si le joueur a appuyé sur une touche
-Retour: retourner le code ASCII de la touche pressée, -1 sinon
-*/
-{
-	// 
-	//	utiliser la fonction _kbhit() de conio.h qui retourne une valeur non
-	//
-	//		nulle si une touche a été pressée
-	//  à compléter
-	if (_kbhit != 0)
-	{
-		return _getch();
-	}
-	else
-	{
-		return -1;
-	}
-}
-
-int calculerDirectionTouche(int touche)
-/*
-Tâche: calculer la direction correspondant à une touche ou -1
-Paramètre: le code d'une touche (w, a, s ou d ou bien fleche haut, bas , gauche, droite)
-Retour: la direction qui correspond à la touche
-(0: droite, 1: gauche, 2: haut, 3: bas)
-*/
-{
-
-
-	if (valTouche == 'd' || valTouche == 'D')
-	{
-		direction = 0;
-	}
-	else if (valTouche == 'a' || valTouche == 'A')
-	{
-		direction = 1;
-	}
-	else if (valTouche == 'w' || valTouche == 'W')
-	{
-		direction = 2;
-	}
-	else if (valTouche == || valTouche == 119)
-	{
-		direction = 3;
-	}
-	else
-	{
-		direction = -1;
-	}
-
-	return direction;
-}
-
-void positionAleatoire(int nbLignes, int nbColonnes, int &posX, int &posY)
-/*
-Tâche: calculer une position aléatoire sur le terrain
-Paramètres: les dimensions du terrain en entrée et les coordonnées de la
-position aléatoire en sortie
-*/
-{
-
-	posX = debutColonne + 1 + rand() % (nbColonnes - 2);
-	posY = debutLigne + 1 + rand() % (nbLignes - 2);
-	gotoXY(posX, posY);
-
-}
-
-void deplacerSerpentI(int direction, int &posX, int &posY)
-/*
-Tâche: déplacer le serpent d'une seule case dans la direction donnée. Le
-serpent est à l'écran avant l'appel et au retour de la fonction
-Paramètres: la direction du serpent en entrée, et la position du serpent en
-entrée / sortie
-*/
-{
-	gotoXY(posX, posY);
-	cout << '$';
-
-	while (_kbhit == 0 && valTouche != 27)
-	{
-		switch (direction)
+		cout << direction;
+		if (_kbhit())
 		{
-		case(0):
-			cout << posX++ << endl;
-			break;
-		case(1):
-			cout << posX-- << endl;
-			break;
-		case(2):
-			cout << posY++ << endl;
-			break;
-		case(3):
-			cout << posY-- << endl;
-			break;
+			direction = _getch();
+			ToucheClavier(x, y);
 		}
-		gotoXY(posX, posY);
-		cout << char(178);
-		Sleep(500);
-	}
+		else
+			ToucheClavier(x, y);
+		if (!Mouvement(x, y))
+			break;
+		Passer(x, y);
+		system("cls");
+		DessinerTerrain();
 
+	}
+	cout << "End!" << endl;
+	return 0;
+}
+//Limite du terrain
+void CreeTerrain()
+{
+	for (int i = 0; i < 20; i++)
+		for (int j = 0; j < 30; j++)
+			Terrain[i][j] = ' ';
+}
+//Cadre du terrain
+void DessinerTerrain()
+{
+	for (int i = 0; i <= 30; i++)
+		cout << "- ";
+	cout << endl;
+	for (int i = 0; i < 20; i++)
+	{
+		cout << "| ";
+		for (int j = 0; j < 30; j++)
+			cout << Terrain[i][j] << " ";
+		cout << "|" << endl;
+	}
+	for (int i = 0; i <= 30; i++)
+		cout << "- ";
+	cout << endl;
+}
+//Jamais le meme casting
+void Random(int &x, int &y)
+{
+	srand(time(0));
+	x = rand() % 10;
+	y = rand() % 10;
 }
 
+//terrain de possibiliter de mouvement
+bool TerrainLibre(int &x, int &y)
+{
+	if (Terrain[x][y] == ' ')
+		return 1;
+	return 0;
+}
+//Creation de la souris
+void CreeSouris()
+{
+PositionSouris:
+	int x = 0, y = 0;
+	Random(x, y);
+	if (TerrainLibre(x, y))
+		Terrain[x][y] = 'O';
+	else
+		goto PositionSouris;
+}
+//Agrandissement du serpent
+bool Serpent(int &x, int &y)
+{
+	if (Terrain[x][y] == 'O')
+	{
+		GrandeurSerpent++;
+		return 1;
+	}
+	return 0;
+}
+//Mouvement du serpent
+bool Mouvement(int &x, int &y)
+{
+	
+	clock();
+	if (Serpent(x, y))
+	{
+		Terrain[x][y] = '#';
+		CreeSouris();
+		return 1;
+	}
+	if (TerrainLibre(x, y))
+	{
+		Terrain[x][y] = '#';
+		return 1;
+	}
+	return 0;
+}
+//Probleme** Suppresion de l'ancien mouvement
+void Effacer(int x, int y)
+{
+	Terrain[x][y] = ' ';
+}
 
+void Passer(int x, int y)
+{
+	Effacer(corpsX, corpsY);
+	for (int i = 0; i < GrandeurSerpent; i++)
+		corpsX = i;
+	for (int j = 0; j < GrandeurSerpent; j++)
+		corpsY = j;
+	corpsComplet = GrandeurSerpent;
+}
+//Touche pour faire le mouvement
+void ToucheClavier(int &x, int &y)
+{
+	switch (direction)
+	{
+	case 'd':
+	{
+		y++;
+		break;
+	}
+	case 'a':
+	{
+		y--;
+		break;
+	}
+	case 's':
+	{
+		x++;
+		break;
+	}
+	case 'w':
+	{
+		x--;
+		break;
+	}
+	}
+}
+// Fin du programme
+bool Fin(int &x, int &y)
+{
+	if (Terrain[x][y] == ' ' || 'O') {
+		return 1;
 
+	}
+	return 0;
+}
